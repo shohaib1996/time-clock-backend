@@ -83,3 +83,29 @@ export const createAdmin = async (req: Request, res: Response) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// 🔑 Change Employee Password
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const { userId, oldPassword, newPassword } = req.body;
+
+    const employee = await Employee.findById(userId);
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    // Check if the old password is correct
+    if (employee.password !== oldPassword) {
+      return res.status(400).json({ error: "Invalid old password" });
+    }
+
+    // Update the password
+    employee.password = newPassword;
+    await employee.save();
+
+    res.json({ message: "Password changed successfully" });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+

@@ -25,7 +25,7 @@ const employeeSchema = new Schema<IEmployee>(
       },
     },
     hourlyRate: { type: Number, default: 0 },
-    isActive: { type: Boolean, default: true },
+    isActive: { type: Boolean, default: false },
     role: { type: String, required: true, default: "employee" },
   },
   { timestamps: true }

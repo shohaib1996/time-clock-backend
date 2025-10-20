@@ -6,6 +6,7 @@ import {
   deleteEmployee,
   getEmployeeProfile,
   getEmployeeById,
+  getEmployeeDashboardData,
 } from "../controllers/employeeController";
 
 const router = express.Router();
@@ -19,5 +20,6 @@ router.delete("/:id", deleteEmployee);
 
 // Employee dashboard endpoint
 router.get("/profile/:employeeId", getEmployeeProfile);
+router.get("/dashboard/:id", getEmployeeDashboardData);
 
 export default router;

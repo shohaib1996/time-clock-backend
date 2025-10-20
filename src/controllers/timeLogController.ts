@@ -10,13 +10,21 @@ const calculateHours = (clockIn: Date, clockOut: Date): number => {
 // 🕐 Employee Clock In
 export const clockIn = async (req: Request, res: Response) => {
   try {
-    const { employeeId } = req.body;
+    const { employeeId, password } = req.body;
     const employee = await Employee.findOne({ _id: employeeId });
     if (!employee) return res.status(404).json({ error: "Employee not found" });
+
+    // Verify password
+    if (employee.password !== password) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
 
     // Check if already clocked in
     const activeLog = await TimeLog.findOne({ employee: employee._id, clockOut: null });
     if (activeLog) return res.status(400).json({ error: "Already clocked in" });
+
+    employee.isActive = true;
+    await employee.save();
 
     const newLog = await TimeLog.create({
       employee: employee._id,
@@ -32,9 +40,14 @@ export const clockIn = async (req: Request, res: Response) => {
 // 🕓 Employee Clock Out
 export const clockOut = async (req: Request, res: Response) => {
   try {
-    const { employeeId } = req.body;
+    const { employeeId, password } = req.body;
     const employee = await Employee.findOne({ _id: employeeId });
     if (!employee) return res.status(404).json({ error: "Employee not found" });
+
+    // Verify password
+    if (employee.password !== password) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
 
     const log = await TimeLog.findOne({ employee: employee._id, clockOut: null });
     if (!log) return res.status(400).json({ error: "No active session" });
@@ -48,6 +61,9 @@ export const clockOut = async (req: Request, res: Response) => {
     log.payAmount = pay;
 
     await log.save();
+
+    employee.isActive = false;
+    await employee.save();
 
     res.json({ message: "Clocked out successfully", log });
   } catch (err: any) {

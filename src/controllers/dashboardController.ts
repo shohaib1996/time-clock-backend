@@ -9,13 +9,16 @@ export const getDashboardData = async (req: Request, res: Response) => {
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-    // 1. Total Active Employees
+    // 1. Total Employees
+    const totalEmployees = await Employee.countDocuments();
+
+    // 2. Total Active Employees
     const totalActiveEmployees = await Employee.countDocuments({ isActive: true });
 
-    // 2. Employees Clocked In
+    // 3. Employees Clocked In
     const employeesClockedIn = await TimeLog.countDocuments({ clockOut: null });
 
-    // 3. Total Hours Logged (Current Month)
+    // 4. Total Hours Logged (Current Month)
     const monthlyHours = await TimeLog.aggregate([
       { $match: { clockIn: { $gte: firstDayOfMonth, $lte: lastDayOfMonth } } },
       { $group: { _id: null, totalHours: { $sum: "$totalHours" } } },
@@ -105,6 +108,7 @@ export const getDashboardData = async (req: Request, res: Response) => {
 
     res.json({
       stats: {
+        totalEmployees,
         totalActiveEmployees,
         employeesClockedIn,
         totalHoursThisMonth,

@@ -1,7 +1,7 @@
 import express, { Application, Request, Response } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import connectDB from "./config/db"; // ✅ relative path fixed (no need for ../src)
+import connectDB from "./config/db";
 import authRoutes from "./routes/authRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
 import employeeRoutes from "./routes/employeeRoutes";
@@ -12,8 +12,15 @@ dotenv.config();
 
 const app: Application = express();
 
+// ✅ CORS configuration for frontend
+app.use(
+  cors({
+    origin: ["http://localhost:3000"], // Frontend origin
+    credentials: true, // Allow cookies & auth headers if needed
+  })
+);
+
 // ✅ Middleware
-app.use(cors());
 app.use(express.json());
 
 // ✅ Connect to MongoDB
@@ -33,4 +40,6 @@ app.use("/api/dashboard", dashboardRoutes);
 
 // ✅ Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`🚀 Server running on http://localhost:${PORT}`)
+);

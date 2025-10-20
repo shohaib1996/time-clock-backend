@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import Employee from "../models/Employee.model";
+import TimeLog from "../models/TimeLog.model";
+import Payment from "../models/Payment.model";
 
 // 🧾 Get all employees (Admin)
 export const getEmployees = async (req: Request, res: Response) => {
@@ -98,13 +101,56 @@ export const deleteEmployee = async (req: Request, res: Response) => {
 export const getEmployeeProfile = async (req: Request, res: Response) => {
   try {
     const { employeeId } = req.params;
-    const employee = await Employee.findOne({ employeeId });
+    const employee = await Employee.findOne({ _id: employeeId });
     if (!employee) return res.status(404).json({ error: "Employee not found" });
 
     res.json({
       name: employee.name,
       email: employee.email,
       hourlyRate: employee.hourlyRate
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//  Dashboard data for a single employee
+export const getEmployeeDashboardData = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const employeeId = new mongoose.Types.ObjectId(id);
+
+    // 1. Total Hours Worked
+    const totalHoursResult = await TimeLog.aggregate([
+      { $match: { employee: employeeId } },
+      { $group: { _id: null, totalHours: { $sum: "$totalHours" } } },
+    ]);
+    const totalHoursWorked = totalHoursResult.length > 0 ? totalHoursResult[0].totalHours : 0;
+
+    // 2. Total Paid
+    const totalPaidResult = await Payment.aggregate([
+      { $match: { employee: employeeId } },
+      { $group: { _id: null, totalAmount: { $sum: "$amount" } } },
+    ]);
+    const totalPaid = totalPaidResult.length > 0 ? totalPaidResult[0].totalAmount.toFixed(2) : 0;
+
+    // 3. Pending Payments
+    const pendingPaymentsResult = await TimeLog.aggregate([
+      { $match: { employee: employeeId, status: "pending" } },
+      { $group: { _id: null, totalAmount: { $sum: "$payAmount" } } },
+    ]);
+    const pendingPayments = pendingPaymentsResult.length > 0 ? pendingPaymentsResult[0].totalAmount : 0;
+
+    // 4. All Time Logs
+    const timeLogs = await TimeLog.find({ employee: employeeId }).sort({ clockIn: -1 });
+
+    res.json({
+      stats: {
+        totalHoursWorked,
+        totalPaid,
+        pendingPayments,
+      },
+      timeLogs,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
